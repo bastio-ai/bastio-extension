@@ -1,0 +1,64 @@
+{
+  "extName": { "message": "Bastio Governance" },
+  "extDescription": { "message": "Schatten-KI-Nutzung überwachen und sensible Daten abfangen, bevor sie öffentliche KI-Tools erreichen." },
+
+  "modalTitle": { "message": "Bastio Governance" },
+  "modalSubtitle": { "message": "Unternehmens-KI-Richtlinie" },
+
+  "modalBodySensitive": {
+    "message": "Sensible Daten erkannt: $rule$",
+    "placeholders": {
+      "rule": { "content": "$1", "example": "eine E-Mail-Adresse" }
+    }
+  },
+  "modalBodyDomain": {
+    "message": "Eine Übermittlung an $domain$ würde gegen die KI-Richtlinie Ihres Unternehmens verstoßen.",
+    "placeholders": {
+      "domain": { "content": "$1", "example": "chatgpt.com" }
+    }
+  },
+
+  "modalCtaPrimary": {
+    "message": "$target$ verwenden →",
+    "placeholders": {
+      "target": { "content": "$1", "example": "Acme LibreChat" }
+    }
+  },
+  "modalCtaCancel": { "message": "Abbrechen" },
+
+  "modalOverrideToggle": { "message": "Trotzdem senden (protokolliert)" },
+  "modalJustifyLabel": { "message": "Begründung (erforderlich, im Audit-Log erfasst)" },
+  "modalJustifyPlaceholder": { "message": "Warum muss diese Richtlinie umgangen werden?" },
+  "modalOverrideConfirm": { "message": "Umgehung bestätigen" },
+
+  "modalFooter": {
+    "message": "geschützt durch bastio.com · governance v$version$",
+    "placeholders": {
+      "version": { "content": "$1", "example": "0.1.0" }
+    }
+  },
+
+  "ruleEmailAddress":      { "message": "eine E-Mail-Adresse" },
+  "rulePhoneNumber":       { "message": "eine Telefonnummer" },
+  "ruleSSN":               { "message": "eine Sozialversicherungsnummer" },
+  "ruleBankAccount":       { "message": "eine Bankkontonummer" },
+  "ruleCreditCard":        { "message": "eine Kreditkartennummer" },
+  "rulePassport":          { "message": "eine Reisepassnummer" },
+  "ruleAWSKey":            { "message": "ein AWS-Zugriffsschlüssel" },
+  "ruleGitHubPAT":         { "message": "ein GitHub-Zugriffstoken" },
+  "ruleStripeKey":         { "message": "ein Stripe-API-Schlüssel" },
+  "ruleSlackToken":        { "message": "ein Slack-Token" },
+  "ruleGoogleAPIKey":      { "message": "ein Google-API-Schlüssel" },
+  "ruleOpenAIKey":         { "message": "ein OpenAI-API-Schlüssel" },
+  "ruleOpenAIProjectKey":  { "message": "ein OpenAI-Projekt-Schlüssel" },
+  "ruleAnthropicKey":      { "message": "ein Anthropic-API-Schlüssel" },
+  "ruleJWT":               { "message": "ein JSON Web Token" },
+  "rulePrivateKey":        { "message": "ein privater Schlüssel" },
+  "ruleHighEntropy":       { "message": "ein wahrscheinliches Geheimnis-Token" },
+  "ruleSourceCode":        { "message": "Quellcode" },
+  "ruleSQL":               { "message": "eine SQL-Anweisung" },
+  "ruleCustomKeyword":     { "message": "ein unternehmensvertrauliches Schlüsselwort" },
+  "ruleSensitiveContent":  { "message": "sensible Inhalte" },
+
+  "connectorAnd": { "message": "und" }
+}

@@ -1,0 +1,64 @@
+{
+  "extName": { "message": "Bastio Governance" },
+  "extDescription": { "message": "Controleer Schaduw-AI-gebruik en onderschep gevoelige gegevens voordat ze publieke AI-tools bereiken." },
+
+  "modalTitle": { "message": "Bastio Governance" },
+  "modalSubtitle": { "message": "AI-beleid van het bedrijf" },
+
+  "modalBodySensitive": {
+    "message": "Gevoelige gegevens gedetecteerd: $rule$",
+    "placeholders": {
+      "rule": { "content": "$1", "example": "een e-mailadres" }
+    }
+  },
+  "modalBodyDomain": {
+    "message": "Dit naar $domain$ sturen zou in strijd zijn met het AI-beleid van uw bedrijf.",
+    "placeholders": {
+      "domain": { "content": "$1", "example": "chatgpt.com" }
+    }
+  },
+
+  "modalCtaPrimary": {
+    "message": "$target$ gebruiken →",
+    "placeholders": {
+      "target": { "content": "$1", "example": "Acme LibreChat" }
+    }
+  },
+  "modalCtaCancel": { "message": "Annuleren" },
+
+  "modalOverrideToggle": { "message": "Toch verzenden (gelogd)" },
+  "modalJustifyLabel": { "message": "Reden (verplicht, vastgelegd in auditlog)" },
+  "modalJustifyPlaceholder": { "message": "Waarom moet dit beleid worden omzeild?" },
+  "modalOverrideConfirm": { "message": "Omzeiling bevestigen" },
+
+  "modalFooter": {
+    "message": "beveiligd door bastio.com · governance v$version$",
+    "placeholders": {
+      "version": { "content": "$1", "example": "0.1.0" }
+    }
+  },
+
+  "ruleEmailAddress":      { "message": "een e-mailadres" },
+  "rulePhoneNumber":       { "message": "een telefoonnummer" },
+  "ruleSSN":               { "message": "een burgerservicenummer" },
+  "ruleBankAccount":       { "message": "een bankrekeningnummer" },
+  "ruleCreditCard":        { "message": "een creditcardnummer" },
+  "rulePassport":          { "message": "een paspoortnummer" },
+  "ruleAWSKey":            { "message": "een AWS-toegangssleutel" },
+  "ruleGitHubPAT":         { "message": "een GitHub-toegangstoken" },
+  "ruleStripeKey":         { "message": "een Stripe-API-sleutel" },
+  "ruleSlackToken":        { "message": "een Slack-token" },
+  "ruleGoogleAPIKey":      { "message": "een Google-API-sleutel" },
+  "ruleOpenAIKey":         { "message": "een OpenAI-API-sleutel" },
+  "ruleOpenAIProjectKey":  { "message": "een OpenAI-projectsleutel" },
+  "ruleAnthropicKey":      { "message": "een Anthropic-API-sleutel" },
+  "ruleJWT":               { "message": "een JSON Web Token" },
+  "rulePrivateKey":        { "message": "een privésleutel" },
+  "ruleHighEntropy":       { "message": "een waarschijnlijk geheim token" },
+  "ruleSourceCode":        { "message": "broncode" },
+  "ruleSQL":               { "message": "een SQL-instructie" },
+  "ruleCustomKeyword":     { "message": "een bedrijfsvertrouwelijk trefwoord" },
+  "ruleSensitiveContent":  { "message": "gevoelige inhoud" },
+
+  "connectorAnd": { "message": "en" }
+}

@@ -1,0 +1,64 @@
+{
+  "extName": { "message": "Bastio Governance" },
+  "extDescription": { "message": "Audit Shadow AI usage and intercept sensitive data before it reaches public AI tools." },
+
+  "modalTitle": { "message": "Bastio Governance" },
+  "modalSubtitle": { "message": "Company AI policy" },
+
+  "modalBodySensitive": {
+    "message": "Sensitive data detected: $rule$",
+    "placeholders": {
+      "rule": { "content": "$1", "example": "an email address" }
+    }
+  },
+  "modalBodyDomain": {
+    "message": "Sending this to $domain$ would violate your company's AI policy.",
+    "placeholders": {
+      "domain": { "content": "$1", "example": "chatgpt.com" }
+    }
+  },
+
+  "modalCtaPrimary": {
+    "message": "Use $target$ →",
+    "placeholders": {
+      "target": { "content": "$1", "example": "Acme LibreChat" }
+    }
+  },
+  "modalCtaCancel": { "message": "Cancel" },
+
+  "modalOverrideToggle": { "message": "Send anyway (logged)" },
+  "modalJustifyLabel": { "message": "Justification (required, audit-logged)" },
+  "modalJustifyPlaceholder": { "message": "Why does this need to bypass policy?" },
+  "modalOverrideConfirm": { "message": "Confirm override" },
+
+  "modalFooter": {
+    "message": "protected by bastio.com · governance v$version$",
+    "placeholders": {
+      "version": { "content": "$1", "example": "0.1.0" }
+    }
+  },
+
+  "ruleEmailAddress":      { "message": "an email address" },
+  "rulePhoneNumber":       { "message": "a phone number" },
+  "ruleSSN":               { "message": "a social security number" },
+  "ruleBankAccount":       { "message": "a bank account number" },
+  "ruleCreditCard":        { "message": "a credit card number" },
+  "rulePassport":          { "message": "a passport number" },
+  "ruleAWSKey":            { "message": "an AWS access key" },
+  "ruleGitHubPAT":         { "message": "a GitHub access token" },
+  "ruleStripeKey":         { "message": "a Stripe API key" },
+  "ruleSlackToken":        { "message": "a Slack token" },
+  "ruleGoogleAPIKey":      { "message": "a Google API key" },
+  "ruleOpenAIKey":         { "message": "an OpenAI API key" },
+  "ruleOpenAIProjectKey":  { "message": "an OpenAI project key" },
+  "ruleAnthropicKey":      { "message": "an Anthropic API key" },
+  "ruleJWT":               { "message": "a JSON Web Token" },
+  "rulePrivateKey":        { "message": "a private key" },
+  "ruleHighEntropy":       { "message": "a likely secret token" },
+  "ruleSourceCode":        { "message": "source code" },
+  "ruleSQL":               { "message": "a SQL statement" },
+  "ruleCustomKeyword":     { "message": "a company-confidential keyword" },
+  "ruleSensitiveContent":  { "message": "sensitive content" },
+
+  "connectorAnd": { "message": "and" }
+}

@@ -1,0 +1,64 @@
+{
+  "extName": { "message": "Bastio Governance" },
+  "extDescription": { "message": "Auditez l'usage de l'IA fantôme et interceptez les données sensibles avant qu'elles n'atteignent les outils d'IA publics." },
+
+  "modalTitle": { "message": "Bastio Governance" },
+  "modalSubtitle": { "message": "Politique IA de l'entreprise" },
+
+  "modalBodySensitive": {
+    "message": "Données sensibles détectées : $rule$",
+    "placeholders": {
+      "rule": { "content": "$1", "example": "une adresse e-mail" }
+    }
+  },
+  "modalBodyDomain": {
+    "message": "Envoyer ceci à $domain$ enfreindrait la politique IA de votre entreprise.",
+    "placeholders": {
+      "domain": { "content": "$1", "example": "chatgpt.com" }
+    }
+  },
+
+  "modalCtaPrimary": {
+    "message": "Utiliser $target$ →",
+    "placeholders": {
+      "target": { "content": "$1", "example": "Acme LibreChat" }
+    }
+  },
+  "modalCtaCancel": { "message": "Annuler" },
+
+  "modalOverrideToggle": { "message": "Envoyer quand même (enregistré)" },
+  "modalJustifyLabel": { "message": "Justification (obligatoire, journalisée pour audit)" },
+  "modalJustifyPlaceholder": { "message": "Pourquoi cette politique doit-elle être contournée ?" },
+  "modalOverrideConfirm": { "message": "Confirmer le contournement" },
+
+  "modalFooter": {
+    "message": "protégé par bastio.com · governance v$version$",
+    "placeholders": {
+      "version": { "content": "$1", "example": "0.1.0" }
+    }
+  },
+
+  "ruleEmailAddress":      { "message": "une adresse e-mail" },
+  "rulePhoneNumber":       { "message": "un numéro de téléphone" },
+  "ruleSSN":               { "message": "un numéro de sécurité sociale" },
+  "ruleBankAccount":       { "message": "un numéro de compte bancaire" },
+  "ruleCreditCard":        { "message": "un numéro de carte bancaire" },
+  "rulePassport":          { "message": "un numéro de passeport" },
+  "ruleAWSKey":            { "message": "une clé d'accès AWS" },
+  "ruleGitHubPAT":         { "message": "un jeton d'accès GitHub" },
+  "ruleStripeKey":         { "message": "une clé API Stripe" },
+  "ruleSlackToken":        { "message": "un jeton Slack" },
+  "ruleGoogleAPIKey":      { "message": "une clé API Google" },
+  "ruleOpenAIKey":         { "message": "une clé API OpenAI" },
+  "ruleOpenAIProjectKey":  { "message": "une clé de projet OpenAI" },
+  "ruleAnthropicKey":      { "message": "une clé API Anthropic" },
+  "ruleJWT":               { "message": "un JSON Web Token" },
+  "rulePrivateKey":        { "message": "une clé privée" },
+  "ruleHighEntropy":       { "message": "un jeton probablement secret" },
+  "ruleSourceCode":        { "message": "du code source" },
+  "ruleSQL":               { "message": "une requête SQL" },
+  "ruleCustomKeyword":     { "message": "un mot-clé confidentiel de l'entreprise" },
+  "ruleSensitiveContent":  { "message": "du contenu sensible" },
+
+  "connectorAnd": { "message": "et" }
+}

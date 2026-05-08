@@ -1,0 +1,36 @@
+Functional Source License, Version 1.1, Apache 2.0 Future License Exception (FSL-1.1-ALv2)
+
+Copyright (c) 2026 Bastio, Inc.
+
+# Abbreviation
+
+FSL-1.1-ALv2
+
+# Notice
+
+Licensor: Bastio, Inc.
+Licensed Work: Bastio Governance Browser Extension
+            The Licensed Work is © 2026 Bastio, Inc.
+
+Additional Use Grant: You may use the Licensed Work for any Permitted Purpose.
+
+A "Permitted Purpose" is any purpose other than a Competing Use.
+A "Competing Use" means making the Licensed Work available to third parties on a hosted or embedded basis in order to compete with the Licensor's paid products that provide the Licensed Work's functionality. Permitted Purposes specifically include using the Licensed Work:
+
+1. for internal use by you or your company;
+2. for non-commercial education;
+3. for non-commercial research; and
+4. in connection with professional services that you provide to a licensee using the Licensed Work in accordance with this License.
+
+Change Date: Two years from the date the Licensed Work is published.
+Change License: Apache License, Version 2.0
+
+For full FSL terms see https://fsl.software/
+
+---
+
+Bastio's open-source policy:
+- Bastio Governance browser extension: FSL-1.1-ALv2
+- Bastio OSS gateway (`bastio/`): FSL-1.1-ALv2
+- Bastio SDKs (`bastio/sdk/`): MIT
+- Bastio Cloud (`bastio-cloud/`): proprietary, all rights reserved

@@ -1,0 +1,44 @@
+{
+  "name": "@bastio/extension",
+  "version": "0.1.0",
+  "description": "Bastio Governance browser extension - audit Shadow AI usage and intercept sensitive data before it reaches public AI tools.",
+  "license": "FSL-1.1-ALv2",
+  "private": true,
+  "type": "module",
+  "author": "Bastio, Inc.",
+  "homepage": "https://bastio.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bastio-ai/bastio-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bastio-ai/bastio-extension/issues"
+  },
+  "keywords": [
+    "browser-extension",
+    "manifest-v3",
+    "ai-security",
+    "shadow-ai",
+    "dlp",
+    "pii-detection",
+    "chrome-extension",
+    "edge-extension"
+  ],
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build && mkdir -p dist/public && cp public/managed-schema.json dist/public/managed-schema.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "bun test src/content/detector.test.ts",
+    "clean": "rm -rf dist .vite release",
+    "sign": "node scripts/sign-crx.cjs",
+    "release": "npm run build && npm run sign"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "typescript": "^5.7.0",
+    "vite": "^7.0.0",
+    "@crxjs/vite-plugin": "^2.0.0-beta.30",
+    "crx": "^5.0.1"
+  }
+}

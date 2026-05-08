@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bastio Governance — Settings</title>
+<link rel="stylesheet" href="../popup/popup.css" />
+<style>
+  body { width: 100%; max-width: 720px; margin: 0 auto; padding: 40px 32px; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .subhead { color: var(--text-muted); font-size: 13px; margin: 0 0 32px; }
+  section { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 12px; }
+  pre { background: var(--bg-2); padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; border: 1px solid var(--border); }
+  .grid { display: grid; grid-template-columns: 160px 1fr; gap: 12px 16px; }
+  .grid dt { color: var(--text-muted); font-size: 12px; }
+  .grid dd { margin: 0; font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 12px; }
+  .empty { color: var(--text-muted); font-style: italic; }
+</style>
+</head>
+<body>
+  <h1>Bastio Governance</h1>
+  <p class="subhead">Read-only view of the org configuration pushed via MDM. To change settings, IT updates the managed-storage policy in Chrome Enterprise / Intune / Jamf.</p>
+
+  <section>
+    <h2>Organization</h2>
+    <dl class="grid" id="org-grid"></dl>
+  </section>
+
+  <section>
+    <h2>Policy</h2>
+    <dl class="grid" id="policy-grid"></dl>
+  </section>
+
+  <section>
+    <h2>Redirect target</h2>
+    <div id="redirect-block"></div>
+  </section>
+
+  <section>
+    <h2>Custom keywords</h2>
+    <div id="keywords-block"></div>
+  </section>
+
+  <section>
+    <h2>Backend</h2>
+    <dl class="grid" id="backend-grid"></dl>
+  </section>
+
+  <script type="module" src="options.ts"></script>
+</body>
+</html>

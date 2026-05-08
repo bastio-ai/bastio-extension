@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "properties": {
+    "backend_url": {
+      "title": "Backend URL",
+      "description": "Bastio server endpoint (api.bastio.com for Cloud, customer's self-hosted bastio for OSS).",
+      "type": "string"
+    },
+    "org_id": {
+      "title": "Organization ID",
+      "description": "UUIDv7 identifying the customer Org.",
+      "type": "string"
+    },
+    "installation_token": {
+      "title": "Installation Token",
+      "description": "Bearer token identifying the org installation. Pushed by IT via MDM.",
+      "type": "string"
+    },
+    "installation_secret": {
+      "title": "Installation Secret",
+      "description": "Base64url-encoded HKDF root secret. Per-install HMAC keys are derived from this.",
+      "type": "string"
+    },
+    "default_policy": {
+      "title": "Default policy",
+      "description": "Action to take per severity tier.",
+      "type": "object",
+      "properties": {
+        "low": { "type": "string", "enum": ["log", "warn", "block_redirect"] },
+        "medium": { "type": "string", "enum": ["log", "warn", "block_redirect"] },
+        "high": { "type": "string", "enum": ["log", "warn", "block_redirect"] }
+      }
+    },
+    "custom_keywords": {
+      "title": "Custom keywords",
+      "description": "Per-org keyword list flagged at low severity (e.g., internal codenames).",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "domain_overrides": {
+      "title": "Domain overrides",
+      "description": "Additional internal AI tool domains to track beyond the default public list.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "override_enabled": {
+      "title": "Override allowed",
+      "description": "Whether employees may bypass a high-severity block with a justification.",
+      "type": "boolean"
+    },
+    "telemetry_endpoint": {
+      "title": "Telemetry endpoint path",
+      "description": "Path on backend_url where governance events are POSTed.",
+      "type": "string"
+    },
+    "tracking_mode": {
+      "title": "Tracking mode",
+      "description": "Which sends generate telemetry. 'policy' (default) only reports policy-relevant events; 'volume' also sends per-domain aggregate counts every 5 minutes; 'full' adds an `observed` event per benign send for forensic deployments.",
+      "type": "string",
+      "enum": ["policy", "volume", "full"],
+      "default": "policy"
+    },
+    "redirect_target": {
+      "title": "Redirect target",
+      "description": "Where to send employees when their prompt is blocked. Configurable per org.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "label": { "type": "string" },
+        "open_in_new_tab": { "type": "boolean" },
+        "carry_over_supported": { "type": "boolean" }
+      }
+    }
+  }
+}

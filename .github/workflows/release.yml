@@ -1,0 +1,139 @@
+name: Release
+
+# Triggers on tags matching v*.*.* (e.g. v0.2.0). Push the tag from main
+# after bumping the manifest version:
+#
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# Required GitHub repository secrets:
+#   CRX_PRIVATE_KEY_BASE64    base64-encoded RSA-4096 PEM. Generate locally:
+#                             openssl genrsa -out bastio-extension.pem 4096
+#                             base64 -i bastio-extension.pem | pbcopy
+#                             then paste into GitHub Settings → Secrets.
+#                             Lose this and the extension ID changes — every
+#                             customer install breaks. Treat it like a TLS key.
+#
+# Optional secrets (Chrome Web Store auto-publish):
+#   WEB_STORE_CLIENT_ID
+#   WEB_STORE_CLIENT_SECRET
+#   WEB_STORE_REFRESH_TOKEN
+#   WEB_STORE_EXTENSION_ID
+#   When all four are present, the workflow also uploads to the Web Store.
+#   Skipped silently when missing — self-hosted CRX still ships.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Override version (default: read from manifest.json)"
+        required: false
+
+permissions:
+  contents: write       # GitHub Release upload
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run detection corpus tests
+        # `bun test` not available on default runners; use node's built-in
+        # test runner via vitest if added later. For now skip if bun absent.
+        run: |
+          if command -v bun >/dev/null 2>&1; then
+            npm run test
+          else
+            echo "bun not installed on runner; skipping detector corpus tests"
+          fi
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Sign CRX
+        id: sign
+        env:
+          PRIVATE_KEY_BASE64: ${{ secrets.CRX_PRIVATE_KEY_BASE64 }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ -z "$PRIVATE_KEY_BASE64" ]; then
+            echo "::error ::CRX_PRIVATE_KEY_BASE64 secret is not set"
+            exit 1
+          fi
+          node scripts/sign-crx.cjs
+
+      - name: Generate update.xml
+        env:
+          VERSION: ${{ steps.sign.outputs.version }}
+          EXTENSION_ID: ${{ steps.sign.outputs.extension_id }}
+        run: node scripts/generate-update-xml.cjs
+
+      - name: Build Web Store zip
+        run: |
+          cd dist
+          zip -r ../release/bastio-governance-${{ steps.sign.outputs.version }}-webstore.zip .
+
+      - name: Upload Release artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release/bastio-governance-${{ steps.sign.outputs.version }}.crx
+            release/bastio-governance-${{ steps.sign.outputs.version }}-webstore.zip
+            release/update.xml
+            release/extension-id.txt
+
+      # Optional: publish to Chrome Web Store. Skipped silently when secrets
+      # aren't configured so the self-hosted path always ships.
+      - name: Publish to Chrome Web Store
+        if: ${{ secrets.WEB_STORE_CLIENT_ID != '' && secrets.WEB_STORE_REFRESH_TOKEN != '' }}
+        env:
+          CLIENT_ID: ${{ secrets.WEB_STORE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.WEB_STORE_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.WEB_STORE_REFRESH_TOKEN }}
+          EXTENSION_ID: ${{ secrets.WEB_STORE_EXTENSION_ID }}
+          VERSION: ${{ steps.sign.outputs.version }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3 upload \
+            --source release/bastio-governance-${VERSION}-webstore.zip \
+            --extension-id "${EXTENSION_ID}" \
+            --client-id "${CLIENT_ID}" \
+            --client-secret "${CLIENT_SECRET}" \
+            --refresh-token "${REFRESH_TOKEN}"
+          npx --yes chrome-webstore-upload-cli@3 publish \
+            --extension-id "${EXTENSION_ID}" \
+            --client-id "${CLIENT_ID}" \
+            --client-secret "${CLIENT_SECRET}" \
+            --refresh-token "${REFRESH_TOKEN}"
+
+      - name: Summary
+        run: |
+          echo "## Released v${{ steps.sign.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Extension ID: \`${{ steps.sign.outputs.extension_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- CRX: \`bastio-governance-${{ steps.sign.outputs.version }}.crx\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Web Store zip: \`bastio-governance-${{ steps.sign.outputs.version }}-webstore.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Update manifest: \`update.xml\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Enterprise hosted-policy URL pattern:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/update.xml" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bastio Governance</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+    <header class="popup-header">
+      <span class="popup-logo">bastio</span>
+      <span class="popup-status" id="status">Loading…</span>
+    </header>
+
+    <!-- State A: not yet connected. Self-serve "Connect" CTA. -->
+    <section class="popup-body" id="view-disconnected" hidden>
+      <p class="lead">Connect this extension to your Bastio organization to start auditing Shadow AI usage.</p>
+      <button class="btn-primary" id="btn-connect" type="button">Connect to Bastio</button>
+      <p class="hint">Already enrolled by IT? Just refresh — managed config takes over automatically.</p>
+    </section>
+
+    <!-- State B: claim minted, waiting on user to confirm in dashboard. -->
+    <section class="popup-body" id="view-connecting" hidden>
+      <p class="lead">Waiting for confirmation in your browser tab…</p>
+      <p class="hint">If the tab didn't open, <a href="#" id="open-connect-url">click here</a>.</p>
+      <button class="btn-ghost" id="btn-cancel" type="button">Cancel</button>
+    </section>
+
+    <!-- State C: connected. Same compact dashboard the popup originally showed. -->
+    <section class="popup-body" id="view-connected" hidden>
+      <div class="row" id="org-row">
+        <span class="label">Organization</span>
+        <span class="value mono" id="org-id">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Last 24h</span>
+        <span class="value mono" id="event-count">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Backend</span>
+        <span class="value mono" id="backend-url">—</span>
+      </div>
+    </section>
+
+    <footer class="popup-footer">
+      <a href="#" id="open-options">Settings</a>
+      <span class="version mono" id="version"></span>
+    </footer>
+  </div>
+  <script type="module" src="popup.ts"></script>
+</body>
+</html>

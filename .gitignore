@@ -1,0 +1,30 @@
+node_modules/
+dist/
+release/
+.vite/
+.DS_Store
+*.log
+.env
+.env.local
+
+# CRX signing keys — NEVER commit. The production key is the one thing
+# you can't lose. Stored as a GitHub Actions secret + offline encrypted backup.
+*.pem
+*.pem.gpg
+bastio-extension.pem
+bastio-extension.pem.gpg
+
+# Local-only working files. Belt-and-suspenders so internal notes,
+# Claude Code project memory, or workspace-private design docs never
+# accidentally land in this public repo.
+.claude/
+CLAUDE.md
+.work/
+.cursor/
+.aider*
+
+# Release artifacts at repo root (the build pipeline writes into release/,
+# but these patterns catch stray manual zips).
+*.crx
+*.zip
+*.xpi
