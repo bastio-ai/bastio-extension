@@ -28,3 +28,6 @@ CLAUDE.md
 *.crx
 *.zip
 *.xpi
+
+# Firecrawl
+.firecrawl
