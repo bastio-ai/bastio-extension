@@ -33,13 +33,22 @@
         <span class="value mono" id="org-id">—</span>
       </div>
       <div class="row">
-        <span class="label">Last 24h</span>
+        <span class="label">Telemetry queue</span>
         <span class="value mono" id="event-count">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Last heartbeat</span>
+        <span class="value mono" id="heartbeat-at">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Policy synced</span>
+        <span class="value mono" id="policy-at">—</span>
       </div>
       <div class="row">
         <span class="label">Backend</span>
         <span class="value mono" id="backend-url">—</span>
       </div>
+      <button class="btn-ghost" id="btn-drain" type="button" hidden>Send queued events now</button>
     </section>
 
     <footer class="popup-footer">

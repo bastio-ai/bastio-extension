@@ -13,6 +13,7 @@
 import { getConfig, isConfigured } from './config';
 import { getOrCreateInstallState } from './install-state';
 import { buildAuthHeader, deriveHmacKey, signRequest } from './hmac';
+import { makeSerialQueue } from './lock';
 import { warn } from './log';
 import type {
   ClassifyRequest,
@@ -21,7 +22,8 @@ import type {
 } from './types';
 
 const OUTBOX_KEY = 'bastio_event_outbox';
-const HEARTBEAT_KEY = 'bastio_last_heartbeat';
+// Exported for the popup's "last heartbeat" row — read-only there.
+export const HEARTBEAT_KEY = 'bastio_last_heartbeat';
 const MAX_OUTBOX_SIZE = 1000;
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 
@@ -31,6 +33,17 @@ interface OutboxEntry {
   next_attempt_at: number;
 }
 
+// Serializes every read-modify-write on OUTBOX_KEY. Content scripts
+// never touch the outbox directly (they route events through the
+// service worker via messages.ts), so this in-worker lock is the
+// single global lock for the key.
+const withOutboxLock = makeSerialQueue();
+
+/**
+ * recordEvent posts an event, falling back to the storage-backed
+ * outbox on failure. SERVICE WORKER ONLY — content scripts must use
+ * submitEvent() from messages.ts so the outbox keeps a single writer.
+ */
 export async function recordEvent(event: GovernanceEvent): Promise<void> {
   // Stamp browser metadata if missing
   const config = await getConfig();
@@ -68,41 +81,61 @@ async function tryPostEvent(event: GovernanceEvent): Promise<boolean> {
 }
 
 async function enqueue(event: GovernanceEvent): Promise<void> {
-  const stored = await chrome.storage.local.get(OUTBOX_KEY);
-  const outbox: OutboxEntry[] = stored[OUTBOX_KEY] ?? [];
-  if (outbox.length >= MAX_OUTBOX_SIZE) {
-    outbox.shift(); // drop oldest
-  }
-  outbox.push({ event, attempts: 0, next_attempt_at: Date.now() + 5_000 });
-  await chrome.storage.local.set({ [OUTBOX_KEY]: outbox });
+  await withOutboxLock(async () => {
+    const stored = await chrome.storage.local.get(OUTBOX_KEY);
+    const outbox: OutboxEntry[] = stored[OUTBOX_KEY] ?? [];
+    if (outbox.length >= MAX_OUTBOX_SIZE) {
+      outbox.shift(); // drop oldest
+    }
+    outbox.push({ event, attempts: 0, next_attempt_at: Date.now() + 5_000 });
+    await chrome.storage.local.set({ [OUTBOX_KEY]: outbox });
+  });
 }
 
 /**
  * Drain the outbox. Called from the service-worker alarm.
  * Exponential backoff: 5s, 10s, 30s, 2m, 10m, 1h, then drop.
+ *
+ * Locking shape: two short critical sections — take ownership of the
+ * due entries, then re-append the failures — with the (slow) network
+ * posts in between OUTSIDE the lock, so concurrent enqueues never wait
+ * on the network. Entries we own can't be lost: they're either posted,
+ * re-appended with backoff, or dropped at the attempt cap.
  */
 export async function drainOutbox(): Promise<void> {
-  const stored = await chrome.storage.local.get(OUTBOX_KEY);
-  const outbox: OutboxEntry[] = stored[OUTBOX_KEY] ?? [];
-  if (outbox.length === 0) return;
-
   const now = Date.now();
-  const remaining: OutboxEntry[] = [];
+  const due = await withOutboxLock(async () => {
+    const stored = await chrome.storage.local.get(OUTBOX_KEY);
+    const outbox: OutboxEntry[] = stored[OUTBOX_KEY] ?? [];
+    if (outbox.length === 0) return [];
+    const ready = outbox.filter((e) => e.next_attempt_at <= now);
+    if (ready.length === 0) return [];
+    const notDue = outbox.filter((e) => e.next_attempt_at > now);
+    await chrome.storage.local.set({ [OUTBOX_KEY]: notDue });
+    return ready;
+  });
+  if (due.length === 0) return;
 
-  for (const entry of outbox) {
-    if (entry.next_attempt_at > now) {
-      remaining.push(entry);
-      continue;
-    }
+  const failures: OutboxEntry[] = [];
+  for (const entry of due) {
     const ok = await tryPostEvent(entry.event);
     if (ok) continue;
     const attempts = entry.attempts + 1;
     if (attempts >= 6) continue; // give up
     const backoff = Math.min(60 * 60_000, 5_000 * 2 ** attempts);
-    remaining.push({ ...entry, attempts, next_attempt_at: now + backoff });
+    failures.push({ ...entry, attempts, next_attempt_at: now + backoff });
   }
+  if (failures.length === 0) return;
 
-  await chrome.storage.local.set({ [OUTBOX_KEY]: remaining });
+  await withOutboxLock(async () => {
+    const stored = await chrome.storage.local.get(OUTBOX_KEY);
+    const outbox: OutboxEntry[] = stored[OUTBOX_KEY] ?? [];
+    const merged = outbox.concat(failures);
+    // Respect the cap after the merge — drop oldest first, same
+    // policy as enqueue.
+    while (merged.length > MAX_OUTBOX_SIZE) merged.shift();
+    await chrome.storage.local.set({ [OUTBOX_KEY]: merged });
+  });
 }
 
 export async function sendHeartbeat(): Promise<void> {
@@ -148,10 +181,9 @@ export async function classify(req: ClassifyRequest): Promise<ClassifyResponse |
   const config = await getConfig();
   if (!isConfigured(config)) return null;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 500);
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 500);
-
     const state = await getOrCreateInstallState();
     const key = await deriveHmacKey(config.installation_secret, state.install_id);
     const path = '/v1/governance/classify';
@@ -167,11 +199,14 @@ export async function classify(req: ClassifyRequest): Promise<ClassifyResponse |
       body,
       signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     if (!res.ok) return null;
     return (await res.json()) as ClassifyResponse;
   } catch {
     return null;
+  } finally {
+    // Without the finally, any throw between setTimeout and the old
+    // clearTimeout left a live timer aborting a dead controller.
+    clearTimeout(timeoutId);
   }
 }
 

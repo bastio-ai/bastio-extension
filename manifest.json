@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extName__",
   "short_name": "Bastio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "author": "Bastio, Inc.",
@@ -12,8 +12,6 @@
 
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting",
     "alarms"
   ],
   "host_permissions": [
@@ -101,7 +99,26 @@
   "web_accessible_resources": [
     {
       "resources": ["public/icons/*"],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://www.bing.com/*",
+        "https://perplexity.ai/*",
+        "https://www.perplexity.ai/*",
+        "https://character.ai/*",
+        "https://poe.com/*",
+        "https://chat.mistral.ai/*",
+        "https://mistral.ai/*",
+        "https://you.com/*",
+        "https://huggingface.co/*",
+        "https://meta.ai/*",
+        "https://chat.deepseek.com/*",
+        "https://www.deepseek.com/*",
+        "https://www.phind.com/*"
+      ]
     }
   ]
 }

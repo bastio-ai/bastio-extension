@@ -48,10 +48,15 @@ tracked in `store/screenshots/` (see plan at the bottom).
 | Permission | Justification |
 |---|---|
 | `storage` | Stores org policy/config (managed storage), self-serve enrollment, and the undelivered-event queue. |
-| `activeTab` / `scripting` | Renders the block/redirect modal in the active AI-tool tab when policy fires. |
 | `alarms` | Drives the periodic event-queue drain, heartbeat, and 5-minute policy refresh in the MV3 service worker. |
-| Host permissions (18 named AI domains) | Detection only works on AI tool pages; each host is an AI assistant the org governs. No `<all_urls>`. |
-| Host permission (api.bastio.com / org server) | Delivers metadata events, heartbeats, and policy fetches to the organization's reporting endpoint. |
+| Host permissions (18 named AI domains) | Detection only works on AI tool pages; each host is an AI assistant the org governs. The block/redirect modal is rendered by the statically declared content script (shadow DOM) — no `activeTab`/`scripting` needed or requested. No `<all_urls>`. |
+| Host permission (api.bastio.com / org server) | Delivers metadata events, heartbeats, and policy fetches to the organization's reporting endpoint from the service worker. |
+
+> History: the 2026-05-08 rejection ("Purple Potassium") was for requesting
+> `scripting` without using it. `scripting` AND `activeTab` were both removed
+> in v0.1.1 — neither is needed with statically declared content scripts.
+> Keep this table in lockstep with manifest.json `permissions` on every
+> submission.
 
 ## Data-use disclosures (Privacy tab checkboxes)
 

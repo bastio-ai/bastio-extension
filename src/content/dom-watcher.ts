@@ -46,6 +46,10 @@ export function startWatcher(opts: WatcherOptions): () => void {
   const handlePreview = (el: HTMLElement): void => {
     if (previewTimer) clearTimeout(previewTimer);
     previewTimer = setTimeout(() => {
+      // Orphaned content script (extension updated/reloaded while this
+      // tab stayed open): preview callbacks reach chrome.* APIs and
+      // would throw "Extension context invalidated". Stop quietly.
+      if (!chrome.runtime?.id) return;
       const text = readInput(el);
       if (text === lastPreviewText) return;
       // Detect a completed send: input transitioned from a real prompt
@@ -78,6 +82,18 @@ export function startWatcher(opts: WatcherOptions): () => void {
     // shared with the doc-level pointer interceptor.
     if (document.documentElement.hasAttribute('data-bastio-redispatching')) return;
 
+    // Orphaned content script: chrome.runtime is gone after an extension
+    // update, and the updated extension only injects into NEW navigations
+    // — this instance can never evaluate policy again. preventDefault'ing
+    // and then failing on the first chrome.* call would strand the user's
+    // chat until a manual reload, so detach everything and let the host
+    // page work natively instead. Checked BEFORE preventDefault on
+    // purpose: this very keystroke must go through.
+    if (!chrome.runtime?.id) {
+      teardown();
+      return;
+    }
+
     const text = readInput(el);
     if (text.trim().length === 0) return;
 
@@ -91,7 +107,15 @@ export function startWatcher(opts: WatcherOptions): () => void {
     e.stopImmediatePropagation();
     e.preventDefault();
 
-    const allowed = await opts.onSendIntercept(text, el);
+    // On callback failure the send stays swallowed for THIS attempt
+    // (fail-closed; a retry re-evaluates) — re-dispatching on error
+    // would turn any induced exception into a policy bypass.
+    let allowed = false;
+    try {
+      allowed = await opts.onSendIntercept(text, el);
+    } catch {
+      debug('send intercept failed; keeping send blocked for this attempt');
+    }
     if (allowed) {
       document.documentElement.setAttribute('data-bastio-redispatching', '1');
       try {
@@ -175,6 +199,12 @@ export function startWatcher(opts: WatcherOptions): () => void {
   let lastBoundCount = 0;
   let stableTicks = 0;
   const periodicScan = setInterval(() => {
+    // Orphaned context: stop polling immediately instead of riding out
+    // the 10s ceiling in a zombie instance.
+    if (!chrome.runtime?.id) {
+      teardown();
+      return;
+    }
     scan(document);
     if (boundCount > 0 && boundCount === lastBoundCount) {
       stableTicks++;
@@ -283,19 +313,45 @@ export function startWatcher(opts: WatcherOptions): () => void {
       }
     }
   };
-  document.addEventListener('pointerdown', (e) => void interceptDocPointer(e), true);
-  document.addEventListener('mousedown', (e) => void interceptDocPointer(e), true);
-  document.addEventListener('click', (e) => void interceptDocPointer(e), true);
+  // Single named handler (not inline arrows) so teardown can actually
+  // detach all three registrations. Capture-phase doc listeners must
+  // never throw — an exception here aborts the gesture for the whole
+  // page — so rejections from the async interceptor are swallowed
+  // after the orphan check has had its chance to self-detach.
+  const docPointerHandler = (e: Event): void => {
+    if (!chrome.runtime?.id) {
+      teardown();
+      return;
+    }
+    interceptDocPointer(e).catch(() => {
+      // Interceptor failures must not propagate out of a capture-phase
+      // listener; the gesture either went through (pre-preventDefault
+      // failure) or stays blocked for this attempt (post-preventDefault).
+    });
+  };
+  document.addEventListener('pointerdown', docPointerHandler, true);
+  document.addEventListener('mousedown', docPointerHandler, true);
+  document.addEventListener('click', docPointerHandler, true);
 
-  return () => {
-    // Document-level pointer listeners cannot be detached cleanly because
-    // they were registered as inline arrow wrappers. In practice the watcher
-    // is started once per content-script lifetime and torn down only when
-    // the tab unloads, which removes them anyway.
+  // teardown is idempotent and reachable from every periodic/handler
+  // path so an orphaned instance (extension updated under this tab)
+  // fully unhooks itself: doc listeners, observer, timers. Per-element
+  // listeners stay attached — their handlers are no-ops once the
+  // orphan checks above short-circuit — and the tab reclaims them on
+  // navigation.
+  let torndown = false;
+  const teardown = (): void => {
+    if (torndown) return;
+    torndown = true;
+    document.removeEventListener('pointerdown', docPointerHandler, true);
+    document.removeEventListener('mousedown', docPointerHandler, true);
+    document.removeEventListener('click', docPointerHandler, true);
     observer.disconnect();
     clearInterval(periodicScan);
     if (previewTimer) clearTimeout(previewTimer);
   };
+
+  return teardown;
 }
 
 // looksLikeNonSendClick returns true when the click target is clearly

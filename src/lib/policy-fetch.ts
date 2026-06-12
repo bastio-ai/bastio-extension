@@ -26,6 +26,10 @@ import type { ManagedConfig, PolicyConfig, TrackingMode } from './types';
 
 export const ALARM_POLICY_FETCH = 'bastio.policy-fetch';
 export const SERVER_POLICY_KEY = 'bastio_server_policy';
+// Timestamp (ms) of the last successful policy fetch. Kept under its
+// own key so the popup can show sync freshness without the timestamp
+// leaking into the config merge.
+export const SERVER_POLICY_AT_KEY = 'bastio_server_policy_at';
 
 // Subset of the server-side policy fields the extension consumes. The
 // dashboard's /policy endpoint returns more (e.g. custom_regex_packs)
@@ -73,7 +77,10 @@ export async function fetchServerPolicy(): Promise<void> {
     if (raw.tracking_mode === 'policy' || raw.tracking_mode === 'volume' || raw.tracking_mode === 'full') {
       subset.tracking_mode = raw.tracking_mode;
     }
-    await chrome.storage.local.set({ [SERVER_POLICY_KEY]: subset });
+    await chrome.storage.local.set({
+      [SERVER_POLICY_KEY]: subset,
+      [SERVER_POLICY_AT_KEY]: Date.now(),
+    });
     invalidateConfigCache();
     debug('server policy fetched', subset);
   } catch (e) {

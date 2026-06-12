@@ -3,8 +3,21 @@
 
 import { getConfig, isConfigured, invalidateConfigCache } from '../lib/config';
 import { getPendingClaim } from '../lib/onboarding';
+import { SERVER_POLICY_AT_KEY } from '../lib/policy-fetch';
+import { HEARTBEAT_KEY } from '../lib/telemetry';
 
 type View = 'disconnected' | 'connecting' | 'connected';
+
+// Compact relative timestamp for the connected view's status rows.
+// "—" for never, "now" under a minute, then m/h/d buckets.
+function relTime(ts: number | undefined): string {
+  if (!ts || ts <= 0) return '—';
+  const delta = Date.now() - ts;
+  if (delta < 60_000) return 'now';
+  if (delta < 60 * 60_000) return `${Math.floor(delta / 60_000)}m ago`;
+  if (delta < 24 * 60 * 60_000) return `${Math.floor(delta / 3_600_000)}h ago`;
+  return `${Math.floor(delta / 86_400_000)}d ago`;
+}
 
 async function init(): Promise<void> {
   const versionEl = document.getElementById('version')!;
@@ -21,6 +34,9 @@ async function init(): Promise<void> {
   });
   document.getElementById('btn-cancel')!.addEventListener('click', () => {
     void onCancel();
+  });
+  document.getElementById('btn-drain')!.addEventListener('click', () => {
+    void onDrain();
   });
   document.getElementById('open-connect-url')!.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -63,10 +79,23 @@ async function render(): Promise<void> {
     statusEl.classList.add('ok');
     document.getElementById('org-id')!.textContent = config.org_id.slice(0, 12) + '…';
     document.getElementById('backend-url')!.textContent = new URL(config.backend_url).host;
-    const stored = await chrome.storage.local.get('bastio_event_outbox');
+    const stored = await chrome.storage.local.get([
+      'bastio_event_outbox',
+      HEARTBEAT_KEY,
+      SERVER_POLICY_AT_KEY,
+    ]);
     const outbox = (stored['bastio_event_outbox'] as Array<unknown>) ?? [];
     document.getElementById('event-count')!.textContent =
       outbox.length === 0 ? 'all sent' : `${outbox.length} queued`;
+    document.getElementById('heartbeat-at')!.textContent = relTime(
+      stored[HEARTBEAT_KEY] as number | undefined,
+    );
+    document.getElementById('policy-at')!.textContent = relTime(
+      stored[SERVER_POLICY_AT_KEY] as number | undefined,
+    );
+    // Manual drain only matters when something is actually queued.
+    (document.getElementById('btn-drain') as HTMLButtonElement).hidden =
+      outbox.length === 0;
   } else if (view === 'connecting') {
     statusEl.textContent = 'Connecting…';
     statusEl.classList.add('warn');
@@ -115,6 +144,19 @@ async function onConnect(): Promise<void> {
 async function onCancel(): Promise<void> {
   await chrome.runtime.sendMessage({ type: 'cancel-connect' });
   await render();
+}
+
+async function onDrain(): Promise<void> {
+  const btn = document.getElementById('btn-drain') as HTMLButtonElement;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    await chrome.runtime.sendMessage({ type: 'drain-outbox' });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send queued events now';
+    await render();
+  }
 }
 
 void init();

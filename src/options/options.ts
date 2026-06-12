@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-ALv2
 // Copyright (c) 2026 Bastio, Inc.
 
-import { getConfig } from '../lib/config';
+import { LOCAL_CONFIG_KEY, getConfig } from '../lib/config';
 import { getOrCreateInstallState } from '../lib/install-state';
 
 function row(grid: HTMLElement, label: string, value: string): void {
@@ -53,6 +53,50 @@ async function init(): Promise<void> {
   const backendGrid = document.getElementById('backend-grid')!;
   row(backendGrid, 'URL', config.backend_url);
   row(backendGrid, 'Telemetry endpoint', config.telemetry_endpoint);
+
+  renderConnectionBlock();
+}
+
+// Connection section: self-serve installs (credentials in
+// chrome.storage.local) get a Disconnect action; managed installs are
+// IT-controlled and not user-disconnectable, so they get an
+// explanation instead of a dead button. disconnect() in the worker
+// only clears local config either way — managed storage is untouchable
+// from the extension.
+function renderConnectionBlock(): void {
+  const block = document.getElementById('connection-block')!;
+  void chrome.storage.local.get(LOCAL_CONFIG_KEY).then((bag) => {
+    block.textContent = '';
+    if (!bag[LOCAL_CONFIG_KEY]) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent =
+        'No self-serve connection. If this install is managed by your organization, IT controls enrollment.';
+      block.appendChild(p);
+      return;
+    }
+    const p = document.createElement('p');
+    p.textContent =
+      'This install is connected via self-serve enrollment. Disconnecting stops all detection and reporting until you reconnect from the popup.';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Disconnect from Bastio';
+    btn.addEventListener('click', () => {
+      if (!window.confirm('Disconnect this browser from Bastio? Detection and reporting stop until you reconnect.')) {
+        return;
+      }
+      btn.disabled = true;
+      void chrome.runtime
+        .sendMessage({ type: 'disconnect' })
+        .then(() => renderConnectionBlock())
+        .catch(() => {
+          btn.disabled = false;
+        });
+    });
+    block.appendChild(p);
+    block.appendChild(btn);
+  });
 }
 
 void init();

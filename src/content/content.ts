@@ -12,9 +12,12 @@
 import { getConfig, isConfigured } from '../lib/config';
 import { getOrCreateInstallState } from '../lib/install-state';
 import { debug, initLogging } from '../lib/log';
-import { classify, recordEvent } from '../lib/telemetry';
+// Events and volume bumps route through the service worker (single
+// writer for chrome.storage read-modify-writes) — see lib/messages.ts.
+// classify() stays direct: it's a read-only network call, no storage.
+import { submitEvent, submitVolumeBump } from '../lib/messages';
+import { classify } from '../lib/telemetry';
 import type { GovernanceEvent, Severity } from '../lib/types';
-import { bumpVolume } from '../lib/volume';
 import { detect, ruleSummary } from './detector';
 import { showBlockModal } from './block-modal';
 import { startWatcher } from './dom-watcher';
@@ -77,9 +80,9 @@ async function main(): Promise<void> {
       const r = detect(text, { customKeywords: cfg.custom_keywords });
       if (r.highest_severity !== null) return;
 
-      void bumpVolume(SOURCE_DOMAIN);
+      void submitVolumeBump(SOURCE_DOMAIN);
       if (mode === 'full') {
-        await recordEvent(
+        await submitEvent(
           buildEvent({
             severity: 'low',
             ruleIds: [],
@@ -104,7 +107,7 @@ async function main(): Promise<void> {
       const mode = config.tracking_mode ?? 'policy';
       debug('tracking_mode resolved as', mode);
       if (mode === 'volume' || mode === 'full') {
-        void bumpVolume(SOURCE_DOMAIN);
+        void submitVolumeBump(SOURCE_DOMAIN);
       }
 
       const result = detect(text, { customKeywords: config.custom_keywords });
@@ -114,7 +117,7 @@ async function main(): Promise<void> {
         // with action='observed' for forensic / IR fidelity. Modes
         // 'policy' and 'volume' stay silent on individual benign sends.
         if (mode === 'full') {
-          await recordEvent(
+          await submitEvent(
             buildEvent({
               severity: 'low',
               ruleIds: [],
@@ -130,7 +133,7 @@ async function main(): Promise<void> {
       const policyAction = config.default_policy[severity];
 
       if (policyAction === 'log') {
-        await recordEvent(
+        await submitEvent(
           buildEvent({
             severity,
             ruleIds: result.rule_ids,
@@ -154,7 +157,7 @@ async function main(): Promise<void> {
             : choice.action === 'override'
               ? 'overridden'
               : 'warned';
-        await recordEvent(
+        await submitEvent(
           buildEvent({
             severity,
             ruleIds: result.rule_ids,
@@ -177,7 +180,7 @@ async function main(): Promise<void> {
 
       if (choice.action === 'redirect' && config.redirect_target) {
         const target = config.redirect_target;
-        await recordEvent(
+        await submitEvent(
           buildEvent({
             severity,
             ruleIds: result.rule_ids,
@@ -196,7 +199,7 @@ async function main(): Promise<void> {
       }
 
       if (choice.action === 'override') {
-        await recordEvent(
+        await submitEvent(
           buildEvent({
             severity,
             ruleIds: result.rule_ids,
@@ -210,7 +213,7 @@ async function main(): Promise<void> {
       }
 
       // cancel
-      await recordEvent(
+      await submitEvent(
         buildEvent({
           severity,
           ruleIds: result.rule_ids,
