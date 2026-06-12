@@ -53,15 +53,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Run detection corpus tests
-        # `bun test` not available on default runners; use node's built-in
-        # test runner via vitest if added later. For now skip if bun absent.
-        run: |
-          if command -v bun >/dev/null 2>&1; then
-            npm run test
-          else
-            echo "bun not installed on runner; skipping detector corpus tests"
-          fi
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Run tests
+        run: npm test
 
       - name: Build extension
         run: npm run build
@@ -100,10 +95,13 @@ jobs:
             release/update.xml
             release/extension-id.txt
 
-      # Optional: publish to Chrome Web Store. Skipped silently when secrets
-      # aren't configured so the self-hosted path always ships.
+      # Optional: publish to Chrome Web Store. Skipped when secrets aren't
+      # configured so the self-hosted path always ships. NOTE: the gate
+      # lives inside the script — the `secrets` context is not available
+      # in step-level `if:` expressions, and referencing it there makes
+      # the whole workflow file invalid (every push then produces an
+      # instant-failed run, which is exactly the bug this replaced).
       - name: Publish to Chrome Web Store
-        if: ${{ secrets.WEB_STORE_CLIENT_ID != '' && secrets.WEB_STORE_REFRESH_TOKEN != '' }}
         env:
           CLIENT_ID: ${{ secrets.WEB_STORE_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.WEB_STORE_CLIENT_SECRET }}
@@ -111,6 +109,10 @@ jobs:
           EXTENSION_ID: ${{ secrets.WEB_STORE_EXTENSION_ID }}
           VERSION: ${{ steps.sign.outputs.version }}
         run: |
+          if [ -z "$CLIENT_ID" ] || [ -z "$REFRESH_TOKEN" ] || [ -z "$EXTENSION_ID" ]; then
+            echo "Web Store secrets not configured; skipping store upload (self-hosted CRX still ships)."
+            exit 0
+          fi
           npx --yes chrome-webstore-upload-cli@3 upload \
             --source release/bastio-governance-${VERSION}-webstore.zip \
             --extension-id "${EXTENSION_ID}" \
