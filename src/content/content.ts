@@ -52,7 +52,6 @@ async function main(): Promise<void> {
       // Fire-and-forget: warm classifier + cache results. Local detection is what
       // actually gates the block at send-time.
       const layer123 = detect(text, { customKeywords: config.custom_keywords });
-      debug('preview text=', text.length, 'chars severity=', layer123.highest_severity, 'rules=', layer123.rule_ids);
       if (layer123.highest_severity === 'high' || layer123.highest_severity === 'medium') {
         void classify({
           text_excerpt: text.slice(0, 4000),

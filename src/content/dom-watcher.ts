@@ -115,26 +115,21 @@ export function startWatcher(opts: WatcherOptions): () => void {
     if (tracked.has(el)) return;
     tracked.add(el);
     boundCount++;
-    debug('bound input', el.tagName, 'role=', el.getAttribute('role'), 'aria=', el.getAttribute('aria-label'));
     // `input` is the standard event but rich-text editors like
     // ProseMirror (used by ChatGPT) intercept and rewrite at the
     // beforeinput stage and may not fire native `input` reliably.
     // Listen for both, plus poll the element's text content as a
     // last-resort fallback so the preview stays accurate regardless
     // of how the host page mutates the DOM.
-    const fireFromEvent = (label: string) => {
-      debug(label, 'fired on', el.tagName);
-      handlePreview(el);
-    };
-    el.addEventListener('input', () => fireFromEvent('input'));
-    el.addEventListener('beforeinput', () => fireFromEvent('beforeinput'));
-    el.addEventListener('keyup', () => handlePreview(el));
-    el.addEventListener('paste', () => fireFromEvent('paste'));
+    const fireFromEvent = () => handlePreview(el);
+    el.addEventListener('input', fireFromEvent);
+    el.addEventListener('beforeinput', fireFromEvent);
+    el.addEventListener('keyup', fireFromEvent);
+    el.addEventListener('paste', fireFromEvent);
     el.addEventListener('keydown', (e) => void handleKeyDown(e as KeyboardEvent, el), true);
   };
 
   const scan = (root: ParentNode): void => {
-    let found = 0;
     // Check the root itself first — querySelectorAll only walks
     // descendants, so a contenteditable div added directly via
     // MutationObserver as `addedNodes[0]` would be missed otherwise.
@@ -142,7 +137,6 @@ export function startWatcher(opts: WatcherOptions): () => void {
       for (const sel of INPUT_SELECTORS) {
         if (root.matches(sel)) {
           attachToInput(root);
-          found++;
           break;
         }
       }
@@ -150,10 +144,8 @@ export function startWatcher(opts: WatcherOptions): () => void {
     for (const sel of INPUT_SELECTORS) {
       for (const el of root.querySelectorAll<HTMLElement>(sel)) {
         attachToInput(el);
-        found++;
       }
     }
-    if (found > 0) debug('scan found', found, 'matching elements');
   };
 
   scan(document);
@@ -244,19 +236,10 @@ export function startWatcher(opts: WatcherOptions): () => void {
     // covers edge cases where the user's keystroke fires before
     // focus moves.
     const input = findRecentInput(tracked) ?? findActiveInput();
-    if (!input) {
-      debug(e.type, 'no input found, skipping');
-      return;
-    }
+    if (!input) return;
     const text = readInput(input);
-    if (text.trim().length === 0) {
-      debug(e.type, 'input empty (', input.tagName, '), skipping');
-      return;
-    }
-    if (target === input || input.contains(target)) {
-      debug(e.type, 'target inside input, skipping (typing/cursor)');
-      return;
-    }
+    if (text.trim().length === 0) return;
+    if (target === input || input.contains(target)) return;
     // Quick synchronous gate: if the input doesn't look sensitive,
     // do NOT preventDefault. Letting the host handle its own click
     // means we never re-dispatch, which means we can't recurse.
@@ -275,14 +258,8 @@ export function startWatcher(opts: WatcherOptions): () => void {
     // Both filters are conservative — they reject only obvious
     // non-send chrome, leaving the existing send-button detection
     // path untouched.
-    if (looksLikeNonSendClick(target)) {
-      debug(e.type, 'target looks like nav/menu/profile, skipping');
-      return;
-    }
-    if (!isAdjacentToInput(target, input, 300)) {
-      debug(e.type, 'target far from input, skipping');
-      return;
-    }
+    if (looksLikeNonSendClick(target)) return;
+    if (!isAdjacentToInput(target, input, 300)) return;
     debug('doc-level', e.type, 'with non-empty input, len=', text.length, 'target=', target.tagName);
     lastInterceptAt = now;
     e.stopPropagation();
